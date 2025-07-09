@@ -22,7 +22,8 @@ async def tables_create(pool):
                 t_id BIGINT UNIQUE NOT NULL,
                 balance INT DEFAULT 0,
                 spent INT DEFAULT 0,
-                created TIMESTAMP DEFAULT NOW()
+                created TIMESTAMP DEFAULT NOW(),
+                is_admin BOOLEAN DEFAULT FALSE
             )
             """
         )
@@ -31,10 +32,12 @@ async def tables_create(pool):
             """
             CREATE TABLE IF NOT EXISTS goods (
                 id SERIAL PRIMARY KEY,
-                name VARCHAR(50) NOT NULL,
+                name VARCHAR(50) NOT NULL UNIQUE,
                 description TEXT NOT NULL,
                 amount INT,
-                price INT NOT NULL
+                price INT NOT NULL,
+                purchase_data TEXT,
+                category VARCHAR(50) NOT NULL
             )
             """
         )
@@ -55,5 +58,4 @@ async def main():
     await tables_create(pool)
     await pool.close()
 if __name__ == "__main__":
-    import asyncio
     asyncio.run(main())
