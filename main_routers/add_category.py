@@ -20,7 +20,6 @@ async def add_category_start(message:Message,state:FSMContext):
         await message.answer(
             "У вас нет прав доступа!"
         )
-        pool.close()
 @router.message(AddCategory.waiting_for_name)
 async def get_name(message:Message,state:FSMContext):
     await state.update_data(name=message.text)
@@ -29,7 +28,7 @@ async def get_name(message:Message,state:FSMContext):
 @router.message(AddCategory.waiting_for_emoji)
 async def get_emoji(message:Message,state:FSMContext):
     await state.update_data(emoji=message.text)
-    data= await state.get_data
+    data= await state.get_data()
     emoji = data["emoji"]
     name = data["name"]
     await message.answer(f"Подтвердите добавление категории:\nНазвание: {name}\nemoji: {emoji}",reply_markup=get_y_or_n_kb())
@@ -40,14 +39,13 @@ async def get_confirm(message:Message,state:FSMContext):
         pool= await get_pool()
         data= await state.get_data()
         await insert_category(pool,data["name"],data["emoji"])
-        await message.answer(f"Товар {data["name"]} успешно добавлен ✅",reply_markup=ReplyKeyboardRemove())
+        await message.answer(f"Категория {data['name']} успешно добавлена ✅",reply_markup=ReplyKeyboardRemove())
     elif message.text.lower()=="нет":
-        await message.answer("добавление товара отменено ❌",reply_markup=ReplyKeyboardRemove())
+        await message.answer("Добавление категории отменено ❌",reply_markup=ReplyKeyboardRemove())
     else:
         await message.answer("Пожалуйста, выберите Да или Нет")
         return None
     await state.clear()
-    await pool.close()
 
 
 

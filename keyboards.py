@@ -1,13 +1,14 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup,KeyboardButton
 def get_categories_kb(categories: list[dict[str, str | int]]) -> InlineKeyboardMarkup:
-    keyboard=InlineKeyboardMarkup(row_width=2)
-    buttons=[InlineKeyboardButton(
-        text=cat['name'],
-        callback_data=f"category_{cat['id']}"
-        )
+    buttons = [
+        [InlineKeyboardButton(
+            text=f"{cat['emoji']} {cat['name']}",
+            callback_data=f"category_{cat['id']}"
+        )]
         for cat in categories
     ]
-    keyboard.add(*buttons)
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
 def get_y_or_n_kb() -> ReplyKeyboardMarkup:
     kb = [

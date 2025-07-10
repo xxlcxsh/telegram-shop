@@ -47,7 +47,7 @@ async def get_is_admin(pool,t_id):
 async def get_categories(pool):
     async with pool.acquire() as conn:
         rows = await conn.fetch(
-            "SELECT id, name FROM categories"
+            "SELECT id, name, emoji FROM categories"
         )
         return [dict(row) for row in rows]
 async def get_goodname_by_catid(pool,cat):

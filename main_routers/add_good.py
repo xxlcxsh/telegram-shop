@@ -1,19 +1,32 @@
 from aiogram import Router, F, types
-from aiogram.filters import Command
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.filters import Command,StateFilter
+from aiogram.types import Message,CallbackQuery, ReplyKeyboardRemove
 from db_connect import get_pool
-from db_queries import get_is_admin,insert_good
+from db_queries import get_is_admin,insert_good,get_categories
 from keyboards import get_categories_kb,get_y_or_n_kb
 from aiogram.fsm.context import FSMContext
 from states.add_good_state import AddGood
 router = Router()
+@router.callback_query(lambda c:c.data.startswith("category_"),StateFilter(AddGood.waiting_for_category))
+async def process_category_callback(callback:CallbackQuery,state:FSMContext):
+    cat_id=int(callback.data.split("_")[1])
+    await state.update_data(category_id=cat_id)
+    data= await state.get_data()
+    name=data["name"]
+    desc=data["desc"]
+    price=data["price"]
+    amount=data["amount"]
+    category_id=data["category_id"]
+    await callback.message.answer(f"Подтвердите добавление товара:\nНазвание: {name}\nОписание: {desc}\nЦена: {price} руб.\nКол-во: {amount}\nID категории: {category_id}",reply_markup=get_y_or_n_kb())
+    await callback.answer()
+    await state.set_state(AddGood.waiting_for_confirm)
 @router.message(Command("admin_add_goods"))
 async def add_good_start(message: Message, state: FSMContext):
     user=message.from_user
     pool = await get_pool()
     is_admin = await get_is_admin(pool,user.id)
     if is_admin:
-        await message.answer("Введите название товара.")
+        await message.answer("Введите название товара:")
         await state.set_state(AddGood.waiting_for_name)
         
     else:
@@ -49,18 +62,10 @@ async def get_amount(message:Message,state:FSMContext):
         await message.answer("Количество должно быть числом! Повторите ввод.")
         return None
     await state.update_data(amount=amount)
-    await message.answer("Выберите категорию товара")
+    pool = await get_pool()
+    categories = await get_categories(pool)
+    await message.answer("Выберите категорию товара",reply_markup=get_categories_kb(categories))
     await state.set_state(AddGood.waiting_for_category)
-@router.message(AddGood.waiting_for_category)
-async def get_category(message:Message,state:FSMContext):
-    data= await state.get_data()
-    name=data["name"]
-    desc=data["desc"]
-    price=data["price"]
-    amount=data["amount"]
-    category=data["category"]
-    await message.answer(f"Подтвердите добавление товара:\nНазвание: {name}\nОписание: {desc}\nЦена: {price} руб.\nКол-во: {amount}\nКатегория: {category}",reply_markup=get_y_or_n_kb)
-    await state.set_state(AddGood.waiting_for_confirm)
 @router.message(AddGood.waiting_for_confirm)
 async def get_confirm(message:Message,state:FSMContext):
     data = await state.get_data()
@@ -68,11 +73,11 @@ async def get_confirm(message:Message,state:FSMContext):
     desc=data["desc"]
     price=data["price"]
     amount=data["amount"]
-    category=data["category"]
+    cat_id=data["category_id"]
     if message.text.lower() == "да":
         await message.answer(f"Товар {name} успешно добавлен ✅",reply_markup=types.ReplyKeyboardRemove())
         pool = await get_pool()
-        await insert_good(pool,name,desc,amount,price,category)
+        await insert_good(pool,name,desc,amount,price,cat_id)
     elif message.text.lower() == "нет":
         await message.answer("добавление товара отменено ❌",reply_markup=types.ReplyKeyboardRemove())
     else:
