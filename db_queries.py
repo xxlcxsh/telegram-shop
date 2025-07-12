@@ -1,4 +1,5 @@
-async def get_balance(pool, t_id):
+from aiocache import cached
+async def get_balance(pool, t_id) -> int:
     async with pool.acquire() as conn:
         balance = await conn.fetchval(
                 """
@@ -7,7 +8,7 @@ async def get_balance(pool, t_id):
                 t_id
             )
         return balance
-async def get_spent(pool,t_id):
+async def get_spent(pool,t_id) -> int:
     async with pool.acquire() as conn:
         spent = await conn.fetchval(
                 """
@@ -16,7 +17,7 @@ async def get_spent(pool,t_id):
                 t_id
             )
         return spent
-async def get_time_created(pool,t_id):
+async def get_time_created(pool,t_id) -> str:
     async with pool.acquire() as conn:
         created = await conn.fetchval(
                 """
@@ -25,7 +26,7 @@ async def get_time_created(pool,t_id):
                 t_id
             )
         return created
-async def create_user(pool,t_id):
+async def create_user(pool,t_id) -> None:
     async with pool.acquire() as conn:
         await conn.execute(
             """
@@ -35,7 +36,17 @@ async def create_user(pool,t_id):
             """,
             t_id
         )
-async def get_is_admin(pool,t_id):
+async def get_all_users_id(pool) -> list[int]:
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT t_id FROM users
+            """
+        )
+        res = [row["t_id"] for row in rows]
+        return res
+@cached(ttl=1200)
+async def get_is_admin(pool,t_id) -> bool:
     async with pool.acquire() as conn:
         is_admin= await conn.fetchval(
             """
@@ -44,28 +55,39 @@ async def get_is_admin(pool,t_id):
             t_id
         )
         return is_admin
-async def get_categories(pool):
+@cached(ttl=600)
+async def get_categories(pool) -> list[dict[str: int | str]]:
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             "SELECT id, name, emoji FROM categories"
         )
         return [dict(row) for row in rows]
-async def get_goodname_by_catid(pool,cat):
+@cached(ttl=600)
+async def get_goods_by_catid(pool,cat) -> list[dict[str: int | str]]:
     async with pool.acquire() as conn:
         rows = await conn.fetch(
-            "SELECT name FROM goods WHERE category='$1'",
+            "SELECT id,name FROM goods WHERE category=$1",
             cat
         )
-        names=[row["name"] for row in rows]
-        return names
-async def get_good_by_name(pool,name):
+        goods = [dict(row) for row in rows]
+        return goods
+@cached(ttl=600)
+async def get_good_by_name(pool,name) -> dict:
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT name, description, amount, price WHERE NAME = $1",
+            "SELECT name, description, amount, price FROM goods WHERE name = $1",
             name
         )
         return row
-async def insert_good(pool,name,desc,amount,price,category):
+@cached(ttl=600)
+async def get_good_by_id(pool,id) -> dict:
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT name, description, amount, price FROM goods WHERE id = $1",
+            id
+        )
+        return dict(row)
+async def insert_good(pool,name,desc,amount,price,category) -> dict:
     async with pool.acquire() as conn:
             await conn.execute(
                 """

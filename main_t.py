@@ -2,9 +2,9 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message
-import asyncio
-from token_telegram import TOKEN
-from main_routers import add_good, profile,goods,add_funds,add_category
+import asyncio, asyncpg
+from config import TOKEN
+from main_routers import add_good, profile, goods, add_funds, add_category, add_post
 import logging
 logging.basicConfig(
     level=logging.INFO,
@@ -12,8 +12,29 @@ logging.basicConfig(
 )  
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
-dp.include_routers(profile.router, goods.router, add_funds.router,add_good.router,add_category.router)
+dp.include_routers(profile.router, goods.router,add_good.router, add_category.router,add_post.router)
+async def on_startup(dispatcher: Dispatcher):
+    pool = await asyncpg.create_pool(
+        user='projuser',
+        password='mypassword',
+        database='ttest',
+        host='localhost',
+        port=5432
+    )
+    dispatcher.pool = pool
+    profile.router.pool = pool
+    goods.router.pool = pool
+    add_funds.router.pool = pool
+    add_good.router.pool = pool
+    add_category.router.pool = pool
+    add_post.router.pool = pool
+    logging.info("Pool created")
 
+async def on_shutdown(dispatcher: Dispatcher):
+    await dispatcher.pool.close()
+    logging.info("Pool closed")
+dp.startup.register(on_startup)
+dp.shutdown.register(on_shutdown)
 @dp.message(Command("start"))
 async def start_handler(message: Message):
     kb=[    
