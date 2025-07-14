@@ -19,3 +19,6 @@ table orders:
     user_id INT REFERENCES users(id),
     good_id INT REFERENCES goods(id),
     created TIMESTAMP DEFAULT NOW()
+table categories:
+    id SERIAL PRIMARY KEY,
+    

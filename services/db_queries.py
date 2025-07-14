@@ -83,7 +83,7 @@ async def get_good_by_name(pool,name) -> dict:
 async def get_good_by_id(pool,id) -> dict:
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT name, description, amount, price FROM goods WHERE id = $1",
+            "SELECT name, description, amount, price,category FROM goods WHERE id = $1",
             id
         )
         return dict(row)
