@@ -1,5 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from callback_data.callbacks import ProductCallback,CategoryCallback,AddProduct
+from callback_data.callbacks import ProductCallback,CategoryCallback,AddProduct,AddDataCategory,AddDataProduct
 from services.db_queries import get_goods_by_catid,get_categories
 def product_keyboard(product_id:int,category_id:int) -> InlineKeyboardMarkup:
     kb = [
@@ -65,6 +65,40 @@ async def add_product_keyboard(pool):
         InlineKeyboardButton(
             text="❌ Закрыть",
             callback_data="clear_state"
+        )
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=kb)
+async def data_category_keyboard(pool) -> InlineKeyboardMarkup:
+    categories = await get_categories(pool)
+    kb=[]
+    for category in categories:
+        kb.append([
+            InlineKeyboardButton(
+                text=category["emoji"]+" "+category["name"],
+                callback_data=AddDataCategory(action="select",category_id=category["id"]).pack()
+            )
+        ])
+    kb.append([
+        InlineKeyboardButton(
+            text="❌ Закрыть",
+            callback_data=AddDataCategory(action="delete",category_id=0).pack()
+        )
+    ])
+    return InlineKeyboardMarkup(inline_keyboard=kb)
+async def data_product_keyboard(pool,category_id)-> InlineKeyboardMarkup:
+    products = await get_goods_by_catid(pool,category_id)
+    kb=[]
+    for product in products:
+        kb.append([
+            InlineKeyboardButton(
+                text=product["name"],
+                callback_data=AddDataProduct(product_id=product["id"]).pack()
+            )
+        ])
+    kb.append([
+        InlineKeyboardButton(
+            text="⬅️Назад",
+            callback_data=AddDataCategory(action="select",category_id=0).pack()
         )
     ])
     return InlineKeyboardMarkup(inline_keyboard=kb)

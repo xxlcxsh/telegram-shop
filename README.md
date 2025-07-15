@@ -12,7 +12,6 @@ table goods:
     description TEXT NOT NULL,
     amount INT,
     price INT NOT NULL,
-    purchase_data TEXT,
     category VARCHAR(50) NOT NULL
 table orders:
     id SERIAL PRIMARY KEY,
@@ -21,4 +20,8 @@ table orders:
     created TIMESTAMP DEFAULT NOW()
 table categories:
     id SERIAL PRIMARY KEY,
+table accounts:
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER REFERENCES good(id) ON DELETE CASCADE,
+    data TEXT NOT NULL
     

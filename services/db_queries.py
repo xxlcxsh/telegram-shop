@@ -1,4 +1,5 @@
 from aiocache import cached
+import aiofiles
 async def get_balance(pool, t_id) -> int:
     async with pool.acquire() as conn:
         balance = await conn.fetchval(
@@ -105,3 +106,29 @@ async def insert_category(pool,name,emoji) -> None:
             """,
             name,emoji
         )
+async def add_admin(t_id,pool):
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE users SET is_admin = true WHERE t_id=$1",
+            t_id
+        )
+async def process_file(file_path,product_id,pool):
+    async with pool.acquire() as conn:
+        count = 0
+
+        async with aiofiles.open(file_path, mode='r') as f:
+            async for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+
+                await conn.execute(
+                    'INSERT INTO accounts (product_id,data) VALUES ($1,$2)',
+                    product_id,line
+                )
+                count += 1
+        await conn.execute(
+            'UPDATE goods SET amount = amount + $1 WHERE id = $2;',
+            count,product_id
+        )
+    return count

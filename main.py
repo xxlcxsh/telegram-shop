@@ -33,7 +33,7 @@ async def on_startup(dispatcher: Dispatcher):
 
 # Функция выключения
 async def on_shutdown(dispatcher: Dispatcher):
-    mw = next((m for m in dp.update.outer_middlewares if isinstance(m, DBMiddleware)), None)
+    mw = next((m for m in dp.update.outer_middleware if isinstance(m, DBMiddleware)), None)
     if mw:
         await mw.pool.close()
     logging.info("Pool closed")

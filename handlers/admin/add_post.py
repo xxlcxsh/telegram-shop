@@ -35,6 +35,7 @@ async def get_post_add(message:Message,state:FSMContext):
     response=message.text.lower()
     data = await state.get_data()
     if response=="добавить товар":
+        
         await message.answer(f"Вы собираетесь опубликовать пост:\n{format_post(data['tittle'],data['text'])}",reply_markup=yn_kb())
         await state.set_state(AddPost.waiting_for_confirm)
     elif response=="добавить категорию":
